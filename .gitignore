@@ -3,3 +3,6 @@ node_modules
 
 # nix env
 .direnv
+
+# secrets
+.env
