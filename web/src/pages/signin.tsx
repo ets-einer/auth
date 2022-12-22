@@ -6,7 +6,7 @@ function SignIn() {
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const navigate = useNavigate();
-  let [searchParams, setSearchParams] = useSearchParams();
+  let [searchParams] = useSearchParams();
   const { mutate } = useMutation(
     ["signIn"],
     () =>
@@ -25,6 +25,8 @@ function SignIn() {
         const callBackUrl = searchParams.get("callbackUrl");
         if (callBackUrl) {
           window.location.href = callBackUrl;
+        } else {
+          navigate("/");
         }
       },
       onError: (err) => alert(JSON.stringify(err, null, 2)),
@@ -34,7 +36,6 @@ function SignIn() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     mutate();
-    // navigate("/");
   };
   return (
     <div>

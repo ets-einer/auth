@@ -32,7 +32,13 @@ const Home: NextPage = () => {
 
   const handleSignin = () => {
     router.push(
-      `${process.env.NEXT_PUBLIC_AUTH_WEB_URL}/signin?callbackUrl=${process.env.NEXT_PUBLIC_HOST_URL}/${router.asPath}`
+      `${process.env.NEXT_PUBLIC_AUTH_WEB_URL}/signin?callbackUrl=${process.env.NEXT_PUBLIC_HOST_URL}${router.asPath}`
+    );
+  };
+
+  const handleSignOut = () => {
+    router.push(
+      `${process.env.NEXT_PUBLIC_AUTH_WEB_URL}/signout?callbackUrl=${process.env.NEXT_PUBLIC_HOST_URL}${router.asPath}`
     );
   };
 
@@ -62,7 +68,7 @@ const Home: NextPage = () => {
         {"user" in meData ? (
           <div>
             <p>You are signed in as {meData.user.email}</p>
-            {/* <button>Logout</button> */}
+            <button onClick={handleSignOut}>Logout</button>
             <hr></hr>
             <h3>Create item</h3>
             <form onSubmit={handleItemSubmit}>

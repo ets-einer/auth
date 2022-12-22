@@ -45,6 +45,33 @@ app.post(
   }
 );
 
+app.post("/signout", async (req: Request, res: Response) => {
+  let sessionCookie = undefined;
+
+  try {
+    sessionCookie = z
+      .object({
+        sessionId: z.string(),
+      })
+      .parse(req.cookies);
+  } catch (error) {
+    return res.status(400).json({ message: "Session not found", error });
+  }
+
+  const { sessionId } = sessionCookie;
+
+  res.clearCookie(sessionId);
+
+  try {
+    await redis.del(sessionId);
+    return res.status(200).json({ message: "Sign out succesfully" });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Could not delete session from redis" });
+  }
+});
+
 app.post("/signup", async (req, res) => {
   let signUpBody = undefined;
   try {
