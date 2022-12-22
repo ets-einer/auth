@@ -14,7 +14,11 @@ const AUTH_PORT = process.env.PORT || 4001;
 const app = express();
 
 app.use(
-  cors({ origin: "http://localhost:5173", methods: "*", credentials: true })
+  cors({
+    origin: ["http://localhost:5173", "http://localhost:3001"],
+    methods: "*",
+    credentials: true,
+  })
 );
 app.use(express.json());
 app.use(cookieParser());
