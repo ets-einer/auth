@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "./lib/prisma";
 import crypto from "crypto";
 import cookieParser from "cookie-parser";
-import { redis } from "./lib/redis";
+import { redis } from "@src/lib/redis";
 import { authenticate } from "./lib/authenticate";
 import type { Request, Response, NextFunction } from "express";
 
@@ -13,7 +13,9 @@ const AUTH_PORT = process.env.PORT || 4001;
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({ origin: "http://localhost:5173", methods: "*", credentials: true })
+);
 app.use(express.json());
 app.use(cookieParser());
 
