@@ -11,6 +11,7 @@ services:
   api:
     build: ./api
     command: npm start
+    restart: always
     env_file:
       - ./api/.env
     depends_on:
@@ -22,6 +23,17 @@ services:
       - 4001:4001
     links:
       - session
+  web:
+    build: ./web
+    command: npm run preview
+    environment:
+      - VITE_AUTH_API_URL=http://api:4001
+    depends_on:
+      - api
+    links:
+      - api
+    ports:
+      - 5173:5173
 volumes:
   db:
     driver: local
