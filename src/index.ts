@@ -1,75 +1,58 @@
-import { logger } from './logger';
-import express from 'express';
-import cors from 'cors'
-import { createClient } from 'redis';
-import { z } from 'zod';
-import { prisma } from './lib/prisma';
-import crypto from 'crypto'
-import cookieParser from 'cookie-parser'
+import { logger } from "./logger";
+import express from "express";
+import cors from "cors";
+import { z } from "zod";
+import { prisma } from "./lib/prisma";
+import crypto from "crypto";
+import cookieParser from "cookie-parser";
+import { redis } from "./lib/redis";
+import { authenticate } from "./lib/authenticate";
+import type { Request, Response, NextFunction } from "express";
 
 const AUTH_PORT = process.env.PORT || 4001;
 
 const app = express();
-const redis = createClient({
-    url: process.env.REDIS_URL ||'redis://:eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81@127.0.0.1:6379'
-})
-
-
-async function connectRedis() {
-  await redis.connect()
-}
-
-connectRedis()
-
-redis.on("error", (err) => logger.error(`Redis Client Error: ${err}`))
 
 app.use(cors());
 app.use(express.json());
-app.use(cookieParser())
+app.use(cookieParser());
 
-app.get('/', async (req, res) => {
-  await redis.set('testkey', 12)
-  await redis.set('testkey2', "12")
-  return res.status(200).json({ message: "Hello World" })
-})
+app.get("/", async (req, res) => {
+  return res.status(200).json({ message: "Hello World" });
+});
 
-app.get('/me', async (req, res) => {
-  const sessionCookie = z.object({
-    sessionId: z.string()
-  })
+app.get("/me", [authenticate], (req: Request, res: Response) => {
+  // console.log(res.locals.user.id)
+  return res
+    .status(200)
+    .json({ message: "User retrieved successfully", user: req.user });
+});
 
-  const { sessionId } = sessionCookie.parse(req.cookies)
-
+app.post("/signup", async (req, res) => {
+  let signUpBody = undefined;
   try {
-    const userId = await redis.get(sessionId)
-
-    if (!userId) return res.status(404).json({ message: "User from your session does not exists" })
-
-    const user = await prisma.user.findUnique({
-      where: {
-        id: userId
-      }
-    })
-    return res.status(200).json({ message: "User retrieved successfully", user })
+    signUpBody = z
+      .object({
+        email: z.string().email(),
+        password: z.string(),
+      })
+      .parse(req.body);
   } catch (error) {
-    return res.status(500).json({ message: "Could not retrieve user from session"})
+    return res
+      .status(400)
+      .json({ message: "Body not formatted correctly", error });
   }
-  
-})
 
-app.post('/signup', async (req, res) => {
-  const signUpBody = z.object({
-    email: z.string().email(),
-    password: z.string()
-  })
-
-  const { email, password } = signUpBody.parse(req.body);
+  const { email, password } = signUpBody;
 
   const user = await prisma.user.findFirst({
-    where: { email }
-  })
+    where: { email },
+  });
 
-  if (user) return res.status(400).json({ message: "User with that email already exists" })
+  if (user)
+    return res
+      .status(400)
+      .json({ message: "User with that email already exists" });
 
   // const hashedPassword = await bcrypt.hash(password, 10)
 
@@ -77,50 +60,52 @@ app.post('/signup', async (req, res) => {
     const user = await prisma.user.create({
       data: {
         email,
-        passwordHash: password
-      }
-    })
-    return res.status(200).json({ message: "User created", user })
+        passwordHash: password,
+      },
+    });
+    return res.status(200).json({ message: "User created", user });
   } catch (error) {
-    return res.status(500).json({ message: "User could not be created", error })
+    return res
+      .status(500)
+      .json({ message: "User could not be created", error });
   }
-})
+});
 
-app.post('/signin', async (req, res) => {
+app.post("/signin", async (req, res) => {
   const signInBody = z.object({
     email: z.string().email(),
-    password: z.string()
-  })
+    password: z.string(),
+  });
 
   const { email, password } = signInBody.parse(req.body);
 
   const user = await prisma.user.findFirst({
-    where: { email }
-  })
+    where: { email },
+  });
 
-  if (!user) return res.status(404).json({ message: "This user does not exists" })
+  if (!user)
+    return res.status(404).json({ message: "This user does not exists" });
 
-  if (user.passwordHash !== password) return res.status(404).json({ message: "Email or password wrong" })
+  if (user.passwordHash !== password)
+    return res.status(404).json({ message: "Email or password wrong" });
 
-  const sessionId = crypto.randomBytes(16).toString('hex')
+  const sessionId = crypto.randomBytes(16).toString("hex");
 
   try {
-    await redis.set(sessionId, user.id)
-    res.cookie('sessionId', sessionId, {
+    await redis.set(sessionId, user.id);
+    res.cookie("sessionId", sessionId, {
       httpOnly: true,
-      maxAge: 1000 * 60 *30,
-      signed: false
-    })
-    return res.status(200).json({ message: "User session created succesfully" })
+      maxAge: 1000 * 60 * 30,
+      signed: false,
+    });
+    return res
+      .status(200)
+      .json({ message: "User session created succesfully" });
   } catch (error) {
-    return res.status(500).json({ message: "Could not create user session" })
+    return res.status(500).json({ message: "Could not create user session" });
   }
-})
+});
 
 app.listen(AUTH_PORT, () => {
-  logger.log(`Server listening on port ${AUTH_PORT}`)
-})
-
-async function disconnectRedis() {
-  await redis.disconnect()
-}
+  logger.log(`Server listening on port ${AUTH_PORT}`);
+});
