@@ -1,13 +1,27 @@
-version: '3'
+version: '3.9'
 services:
-  cache:
+  session:
     image: redis:latest
     restart: always
     ports:
-      - '6379:6379'
+      - 6379:6379
     command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
-    volumes: 
-      - cache:/data
+    volumes:
+      - db:/var/lib/redis
+  api:
+    build: ./api
+    command: npm start
+    env_file:
+      - ./api/.env
+    depends_on:
+      - session
+    environment:
+      - DATABASE_URL=file:./dev.db
+      - REDIS_URL=redis://:eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81@session:6379
+    ports:
+      - 4001:4001
+    links:
+      - session
 volumes:
-  cache:
+  db:
     driver: local
