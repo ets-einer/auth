@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "api"
+		},
+		{
+			"path": "web"
+		},
+		{
+			"path": "example/t3-app"
+		}
+	],
+	"settings": {}
+}
