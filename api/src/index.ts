@@ -6,7 +6,7 @@ import { prisma } from "./lib/prisma";
 import crypto from "crypto";
 import cookieParser from "cookie-parser";
 import { redis } from "@src/lib/redis";
-import { authenticate } from "./lib/authenticate";
+import { authenticate, authenticateMicroserviceCall } from "./lib/authenticate";
 import type { Request, Response, NextFunction } from "express";
 
 const AUTH_PORT = process.env.PORT || 4001;
@@ -29,6 +29,17 @@ app.get("/me", [authenticate], (req: Request, res: Response) => {
     .status(200)
     .json({ message: "User retrieved successfully", user: req.user });
 });
+
+app.post(
+  "/ms/me",
+  [authenticateMicroserviceCall],
+  (req: Request, res: Response) => {
+    // console.log(res.locals.user.id)
+    return res
+      .status(200)
+      .json({ message: "User retrieved successfully", user: req.user });
+  }
+);
 
 app.post("/signup", async (req, res) => {
   let signUpBody = undefined;
